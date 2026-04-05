@@ -21,7 +21,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-900 pt-12 md:pt-20 pb-10 px-4 md:px-6 font-montserrat text-white border-t border-slate-800">
+    <footer className="bg-slate-900 pt-12 md:pt-20 pb-10 px-4 md:px-6 font-montserrat text-white border-t border-slate-800 relative">
       <div className="max-w-7xl mx-auto">
         
         {/* TOP SECTION */}
@@ -94,12 +94,29 @@ const Footer = () => {
         </div>
 
         {/* BOTTOM BAR & ATTRIBUTION */}
-        <div className="border-t border-slate-800/50 pt-10 text-center">
+        <div className="border-t border-slate-800/50 pt-10 text-center relative z-10">
+          
+          {/* --- UPDATED ATTRIBUTION PILL --- */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-10 group">
-            <span className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em]">Architected By</span>
-            <a href="https://khudkila.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-2 bg-slate-800 rounded-full border border-slate-700 hover:bg-emerald-600 hover:border-emerald-600 transition-all duration-300 group-hover:-translate-y-1">
-              <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em] group-hover:text-white">Khudkila</span>
-              <ArrowRight size={14} className="text-emerald-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            <span className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em]">
+              Architected By
+            </span>
+            <a 
+              href="https://khudkila.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-3.5 px-6 py-3 bg-white rounded-full border border-slate-100 hover:shadow-xl hover:shadow-emerald-950/10 transition-all duration-300 transform group-hover:-translate-y-1.5"
+            >
+              {/* Khudkila Logo (logo1.png) */}
+              <img 
+                src="/khudkila2.jpg" 
+                alt="Khudkila Logo" 
+                className="w-5 h-5 object-contain" // Natural colors on white
+              />
+              <span className="text-slate-900 text-[11px] font-extrabold tracking-tight group-hover:text-emerald-600 transition-colors">
+                Khudkila
+              </span>
+              <ArrowRight size={14} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
 
