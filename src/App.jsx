@@ -82,7 +82,8 @@ const App = () => {
           <Route path="/contact" element={<ContactPage />} />
           <Route path='/gallery' element={<Gallery/>}/>
           <Route path='/visa-info' element={<VisaInfo/>}/>
-          <Route path='/activities/trek' element={<TrekActivity/>}/>
+          <Route path='/activities/trekking/:id' element={<TrekActivity/>}/>
+          <Route path='/activities/trekking' element={<TrekActivity/>}/>
           <Route path='/activities/hiking' element={<Hiking/>}/>
           <Route path='/activities/rafting' element={<RaftingActivity/>}/>
           <Route path='/activities/sightseeing' element={<SightSeeing/>}/>

@@ -117,7 +117,7 @@ const Navbar = () => {
   const activities = [
     {
       name: "Trek",
-      to: "/activities/trek",
+      to: "/activities/trekking",
       icon: <Mountain size={16} />,
       desc: "High altitude climbs",
     },

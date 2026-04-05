@@ -4,12 +4,12 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'f
 import { onAuthStateChanged } from 'firebase/auth';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  Map, Navigation, ArrowRight, Camera,
-  Hotel, Users, LayoutGrid, Calendar,
-  ChevronLeft, CheckCircle, Shield, Mountain,
-  Info, Clock, Sparkles, Send, Lock, X, Loader2, MapPin, Waves, Zap
+  ArrowRight, CheckCircle, ChevronLeft, 
+  XCircle, X, Loader2, Send, Clock, 
+  Gauge, Tent, Calendar, Phone, Users, Info, Mountain
 } from 'lucide-react';
 import AlertModal from '../../utils/AlertModal';
+import PackageCard from '../Cards/PackageCard'; // Ensure the path to your PackageCard is correct
 
 const DomesticActivity = () => {
   const navigate = useNavigate();
@@ -29,55 +29,48 @@ const DomesticActivity = () => {
     name: '', email: '', phone: '', travelers: '1', date: '' 
   });
 
-  // 1. Monitor Auth State
+  // Current date for calendar validation (YYYY-MM-DD)
+  const today = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
-        setBookingData(prev => ({
-          ...prev,
-          name: user.displayName || '',
-          email: user.email || ''
-        }));
+        setBookingData(prev => ({ ...prev, name: user.displayName || '', email: user.email || '' }));
       }
     });
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Fetch Data & Sync with URL ID
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, "destinations"), where("type", "==", "domestic"));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setDomesticDestinations(docs);
-      
-      // Critical Fix: Sync the URL ID with the fetched data
       if (id) {
         const found = docs.find(d => d.id === id);
-        if (found) {
-          setSelectedDest(found);
-        } else {
-          console.warn("No matching destination found for ID:", id);
-          setSelectedDest(null);
-        }
+        if (found) setSelectedDest(found);
       } else {
         setSelectedDest(null);
       }
-      
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore Error:", error);
       setLoading(false);
     });
-    
     return () => unsubscribe();
-  }, [id]); // Re-runs when the URL ID changes
+  }, [id]);
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser) return;
+    
+    // --- VALIDATION ---
+    if (!bookingData.date || bookingData.date < today) {
+      setAlertConfig({ show: true, title: "Invalid Date", message: "Please select a valid future date for your expedition.", type: 'warning' });
+      return;
+    }
+    if (!bookingData.phone || bookingData.phone.length < 7) {
+      setAlertConfig({ show: true, title: "Phone Required", message: "Please enter a valid contact number.", type: 'warning' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -88,7 +81,7 @@ const DomesticActivity = () => {
         phone: bookingData.phone,
         travelDate: bookingData.date,
         travelers: bookingData.travelers,
-        packageName: selectedDest.name,
+        packageName: selectedDest.name, // Matches admin table 'packageName'
         packagePrice: selectedDest.budget,
         packageType: 'domestic',
         status: 'pending',
@@ -96,23 +89,11 @@ const DomesticActivity = () => {
       });
 
       setShowBookingModal(false);
-      setAlertConfig({
-        show: true,
-        title: "Booking Successful!",
-        message: `Your request for ${selectedDest.name} has been received.`,
-        type: 'success'
-      });
+      setAlertConfig({ show: true, title: "Reservation Sent", message: `We have received your request for ${selectedDest.name}.`, type: 'success' });
       setBookingData(prev => ({ ...prev, phone: '', date: '', travelers: '1' }));
     } catch (error) {
-      console.error("Booking Error:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleBack = () => {
-    setSelectedDest(null);
-    navigate('/destinations/domestic');
+      setAlertConfig({ show: true, title: "Error", message: "Booking failed. Please check your connection.", type: 'error' });
+    } finally { setIsSubmitting(false); }
   };
 
   const formatList = (text) => {
@@ -120,151 +101,219 @@ const DomesticActivity = () => {
     return text.split(/[\n•·]+/).filter(item => item.trim() !== '');
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <Loader2 className="animate-spin text-emerald-600 mb-4" size={32} />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Local Adventures</p>
-    </div>
-  );
+  const renderItinerary = (text) => {
+    if (!text) return <p className="text-slate-400 italic font-bold text-[10px]">ITINERARY PENDING...</p>;
+    const days = text.split(/(?=Day\s?\d+[:\s\-])/g).filter(d => d.trim() !== "");
 
-  // --- BOOKING MODAL COMPONENT ---
-  const BookingModal = () => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-md" onClick={() => setShowBookingModal(false)} />
-      <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl overflow-hidden">
-        <button onClick={() => setShowBookingModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-emerald-600 transition-colors">
-          <X size={20} />
-        </button>
-        <div className="mb-8">
-          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em]">Local Reservation</span>
-          <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mt-1">{selectedDest?.name}</h2>
-        </div>
-        <form onSubmit={handleBookingSubmit} className="space-y-4">
-          <input required type="text" placeholder="Full Name" className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-[12px] outline-none" 
-            value={bookingData.name} onChange={(e) => setBookingData({...bookingData, name: e.target.value})} />
-          <div className="grid grid-cols-2 gap-4">
-            <input required type="email" placeholder="Email" className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-[12px] outline-none" 
-              value={bookingData.email} onChange={(e) => setBookingData({...bookingData, email: e.target.value})} />
-            <input required type="tel" placeholder="Phone" className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-[12px] outline-none" 
-              value={bookingData.phone} onChange={(e) => setBookingData({...bookingData, phone: e.target.value})} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <input required type="date" className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-[12px] outline-none" 
-              value={bookingData.date} onChange={(e) => setBookingData({...bookingData, date: e.target.value})} />
-            <select className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold text-[12px] outline-none"
-              value={bookingData.travelers} onChange={(e) => setBookingData({...bookingData, travelers: e.target.value})}>
-              {[1,2,3,4,5,6,7,8,9,10].map(num => <option key={num} value={num}>{num} Travelers</option>)}
-            </select>
-          </div>
-          <button disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all flex items-center justify-center gap-2">
-            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Send size={14}/> Confirm Booking</>}
-          </button>
-        </form>
+    return (
+      <div className="relative ml-4 border-l-2 border-emerald-50">
+        {days.map((day, idx) => {
+          const [label, ...desc] = day.split(/[:\s-](.+)/);
+          return (
+            <div key={idx} className="relative pl-10 pb-12 group">
+              <div className="absolute left-[-9px] top-1.5 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white shadow-sm" />
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2">{label}</span>
+              <p className="text-sm font-bold text-slate-700 leading-snug">{desc.join('').trim()}</p>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  );
+    );
+  };
 
-  // --- DETAIL VIEW ---
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>;
+
   if (selectedDest) {
     const { name, overview, budget, image, details } = selectedDest;
+    const highlights = formatList(details?.highlights);
+    const includes = formatList(details?.costIncludes);
+    const excludes = formatList(details?.costExcludes);
+
     return (
-      <div className="min-h-screen bg-white font-montserrat pb-20 animate-in fade-in duration-500">
+      <div className="min-h-screen bg-white font-montserrat pb-20">
         <AlertModal 
           isOpen={alertConfig.show} 
-          onConfirm={() => setAlertConfig(prev => ({ ...prev, show: false }))}
-          title={alertConfig.title}
-          message={alertConfig.message}
-          type={alertConfig.type}
+          onConfirm={() => { setAlertConfig(p => ({ ...p, show: false })); if(alertConfig.type === 'success') navigate('/destinations/domestic'); }}
+          {...alertConfig} 
         />
-        {showBookingModal && <BookingModal />}
         
-        <div className="relative h-[65vh] w-full">
-          <button onClick={handleBack} className="absolute top-8 left-8 z-20 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white hover:text-slate-900 transition-all">
+        {/* GREEN HERO SECTION */}
+        <div className="relative h-[65vh] w-full bg-emerald-950 overflow-hidden">
+          <button onClick={() => navigate('/destinations/domestic')} className="absolute top-8 left-8 z-30 bg-white/10 backdrop-blur-md p-4 rounded-full text-white hover:bg-emerald-500 transition-all">
             <ChevronLeft size={24} />
           </button>
-          <img src={image} alt={name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/20" />
-          <div className="absolute bottom-12 left-8 md:left-20 text-white max-w-4xl">
-            <div className="flex gap-2 mb-4">
-               <span className="bg-emerald-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">Domestic</span>
-               {details?.difficulty && <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">{details.difficulty}</span>}
-            </div>
-            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9]">{name}</h1>
+          
+          <div className="absolute inset-0 opacity-40">
+             <img src={image} alt={name} className="w-full h-full object-cover mix-blend-overlay" />
           </div>
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/20 to-transparent" />
+          
+          <div className="absolute bottom-16 left-8 md:left-20 max-w-4xl z-10">
+            <div className="flex gap-3 mb-6">
+               <span className="bg-emerald-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest">Domestic Expedition</span>
+               <span className="bg-white/10 backdrop-blur text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest">{details?.duration || '7 Days'}</span>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter text-white leading-[0.85]">{name}</h1>
+          </div>
+          <Mountain size={500} className="absolute -bottom-24 -right-24 text-white/5 pointer-events-none" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16">
-          <div className="lg:col-span-2 space-y-16">
+        <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-12 gap-20">
+          <div className="lg:col-span-8 space-y-20">
             <section>
-              <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mb-4">The Experience</h2>
-              <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-line mb-8">{overview}</p>
+              <h2 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-6">Overview</h2>
+              <p className="text-xl text-slate-600 font-medium leading-relaxed whitespace-pre-line">{overview}</p>
             </section>
 
-            {details?.highlights && (
-              <section>
-                <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mb-6">Expedition Highlights</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formatList(details.highlights).map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 p-6 bg-slate-50 rounded-2xl hover:bg-emerald-50 transition-colors">
-                      <CheckCircle size={18} className="text-emerald-600" />
-                      <span className="text-[11px] font-black text-slate-700 uppercase">{item}</span>
-                    </div>
+            {/* HIGHLIGHTS */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h2 className="col-span-full text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-4">Core Highlights</h2>
+                {highlights.map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 p-5 bg-slate-50 rounded-3xl border border-slate-100 group hover:bg-emerald-50 transition-colors">
+                    <CheckCircle size={18} className="text-emerald-500" />
+                    <span className="text-[11px] font-black text-slate-700 uppercase">{item}</span>
+                  </div>
+                ))}
+            </section>
+
+            {/* COST DETAILS */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-12 py-12 border-y border-slate-100">
+              <div>
+                <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-8 flex items-center gap-2">
+                  <CheckCircle size={16} /> Cost Includes
+                </h3>
+                <ul className="space-y-4">
+                  {includes.map((item, i) => (
+                    <li key={i} className="text-[12px] font-bold text-slate-500 uppercase flex gap-3">
+                      <span className="text-emerald-500">•</span> {item}
+                    </li>
                   ))}
-                </div>
-              </section>
-            )}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-8 flex items-center gap-2">
+                  <XCircle size={16} /> Cost Excludes
+                </h3>
+                <ul className="space-y-4">
+                  {excludes.map((item, i) => (
+                    <li key={i} className="text-[12px] font-bold text-slate-500 uppercase flex gap-3">
+                      <span className="text-rose-400">•</span> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-10">Itinerary</h2>
+              {renderItinerary(details?.itinerary)}
+            </section>
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="sticky top-28 bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl overflow-hidden">
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-2">Investment</span>
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-black tracking-tighter">Rs {budget}</span>
-                <span className="text-slate-400 text-[10px] font-bold uppercase">/ Person</span>
+          {/* SIDEBAR */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-32 bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
+              <Tent size={180} className="absolute -bottom-10 -right-10 text-white/5" />
+              <div className="relative z-10">
+                <div className="mb-10">
+                  <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Package Price</p>
+                  <h3 className="text-5xl font-black tracking-tighter">Rs {budget}</h3>
+                </div>
+                
+                <div className="py-8 border-y border-white/10 mb-10 space-y-5">
+                  <div className="flex justify-between text-[11px] font-black uppercase text-slate-400">
+                    <span className="flex items-center gap-2"><Clock size={16} /> Duration</span>
+                    <span className="text-white">{details?.duration || '7 Days'}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] font-black uppercase text-slate-400">
+                    <span className="flex items-center gap-2"><Gauge size={16} /> Grade</span>
+                    <span className="text-emerald-400">{details?.difficulty || 'Moderate'}</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={currentUser ? () => setShowBookingModal(true) : () => navigate('/login')} 
+                  className="w-full bg-emerald-500 hover:bg-white hover:text-slate-900 py-6 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl flex items-center justify-center gap-3"
+                >
+                  Start Booking <ArrowRight size={18} />
+                </button>
               </div>
-              
-              <button onClick={currentUser ? () => setShowBookingModal(true) : () => navigate('/login')} className="w-full bg-emerald-600 hover:bg-emerald-500 py-6 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all">
-                {currentUser ? "Book This Expedition" : "Login to Book"}
-              </button>
             </div>
           </div>
         </div>
+
+        {/* VALIDATED BOOKING MODAL */}
+        {showBookingModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-2xl bg-slate-950/80">
+            <div className="bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+              <button onClick={() => setShowBookingModal(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900 transition-colors"><X size={24} /></button>
+              <div className="mb-10">
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">Finalize</h2>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{name}</p>
+              </div>
+              <form onSubmit={handleBookingSubmit} className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 block flex items-center gap-2"><Phone size={14} className="text-emerald-500" /> WhatsApp / Phone</label>
+                  <input required type="tel" placeholder="98XXXXXXXX" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-emerald-500 transition-all font-bold text-sm" 
+                    value={bookingData.phone} onChange={(e) => setBookingData({...bookingData, phone: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 block flex items-center gap-2"><Calendar size={14} className="text-emerald-500" /> Start Date</label>
+                    <input 
+                      required 
+                      type="date" 
+                      min={today} // Prevents past date selection
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-emerald-500 transition-all font-bold text-sm" 
+                      value={bookingData.date} 
+                      onChange={(e) => setBookingData({...bookingData, date: e.target.value})} 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 block flex items-center gap-2"><Users size={14} className="text-emerald-500" /> Group Size</label>
+                    <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-emerald-500 transition-all font-bold text-sm appearance-none"
+                      value={bookingData.travelers} onChange={(e) => setBookingData({...bookingData, travelers: e.target.value})}>
+                      {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n} {n===1?'Person':'People'}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="p-5 bg-emerald-50 rounded-3xl flex items-start gap-4">
+                  <Info size={20} className="text-emerald-600 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold text-emerald-800 uppercase leading-tight">Confirmation is subject to availability for the chosen date.</p>
+                </div>
+                <button disabled={isSubmitting} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-emerald-600 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50">
+                  {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Confirm Reservation"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  // --- LIST VIEW ---
+  // --- LIST VIEW (WITH PACKAGECARD) ---
   return (
-    <div className="min-h-screen bg-white font-montserrat pb-20">
-      <section className="bg-emerald-900 text-white py-32 px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-white font-montserrat">
+      <header className="bg-emerald-950 text-white py-40 px-6 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-          <span className="text-emerald-400 font-black uppercase tracking-[0.4em] text-[10px]">Nepal Getaways</span>
-          <h1 className="text-6xl md:text-8xl font-black mt-4 mb-6 tracking-tighter uppercase leading-[0.85]">Wild <br/>Nepal</h1>
+          <span className="text-emerald-500 font-black uppercase tracking-[0.5em] text-[10px]">Nepal Getaways</span>
+          <h1 className="text-8xl md:text-[10rem] font-black tracking-tighter uppercase leading-[0.75] mt-4">Local<br/>Adventures.</h1>
         </div>
-      </section>
+        <Mountain size={600} className="absolute -bottom-40 -right-40 text-emerald-900/50 pointer-events-none" />
+      </header>
 
-      <section className="max-w-7xl mx-auto px-6 -mt-16 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+      <main className="max-w-7xl mx-auto px-6 py-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {domesticDestinations.map((dest) => (
-            <div key={dest.id} className="group flex flex-col bg-white rounded-[3rem] overflow-hidden border border-slate-100 hover:shadow-xl transition-all duration-500">
-              <div className="relative h-80 overflow-hidden">
-                <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                <div className="absolute bottom-6 left-6 text-white">
-                    <p className="text-2xl font-black tracking-tighter uppercase leading-none">{dest.name}</p>
-                </div>
-              </div>
-              <div className="p-8">
-                <button 
-                  onClick={() => navigate(`/destinations/domestic/${dest.id}`)} 
-                  className="w-full bg-slate-900 text-white hover:bg-emerald-600 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2"
-                >
-                  View Details <ArrowRight size={14} />
-                </button>
-              </div>
+            <div key={dest.id} onClick={() => navigate(`/destinations/domestic/${dest.id}`)} className="cursor-pointer">
+              {/* Ensure category is injected if missing from DB for visual consistency */}
+              <PackageCard data={{...dest, category: 'Domestic'}} />
             </div>
           ))}
         </div>
-      </section>
+      </main>
     </div>
   );
 };

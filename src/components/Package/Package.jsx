@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from "../../services/firebase"; 
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { 
-  Loader2, Compass, Search, Filter, Plane, Map, 
+  Loader2, Compass, Search, Filter, Map, 
   Waves, Mountain, Footprints, Camera, Globe 
 } from 'lucide-react';
 import PackageCard from '../Cards/PackageCard'; 
@@ -28,31 +28,27 @@ const Packages = () => {
   ];
 
   useEffect(() => {
-    // 1. Define queries for both collections
     const activitiesQ = query(collection(db, "activities"));
     const destinationsQ = query(collection(db, "destinations"));
 
     let activitiesData = [];
     let destinationsData = [];
 
-    // 2. Listener for Activities (Sightseeing, Hiking, etc.)
     const unsubscribeActivities = onSnapshot(activitiesQ, (snapshot) => {
       activitiesData = snapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data(),
-        source: 'activities' // Flag to track origin
+        source: 'activities' 
       }));
       combineData();
     });
 
-    // 3. Listener for Destinations (Domestic & International)
     const unsubscribeDestinations = onSnapshot(destinationsQ, (snapshot) => {
       destinationsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return { 
           id: doc.id, 
           ...data, 
-          // Map "type" from destinations to "category" for the filter logic
           category: data.type || data.category || 'domestic', 
           source: 'destinations'
         };
@@ -60,7 +56,6 @@ const Packages = () => {
       combineData();
     });
 
-    // 4. Helper to merge both arrays and stop loading
     const combineData = () => {
       const merged = [...activitiesData, ...destinationsData];
       setAllPackages(merged);
@@ -73,7 +68,6 @@ const Packages = () => {
     };
   }, []);
 
-  // Filter Logic
   useEffect(() => {
     let result = allPackages;
 
@@ -85,7 +79,7 @@ const Packages = () => {
       const term = searchQuery.toLowerCase();
       result = result.filter(pkg => 
         pkg.title?.toLowerCase().includes(term) ||
-        pkg.name?.toLowerCase().includes(term) || // Destinations might use 'name' instead of 'title'
+        pkg.name?.toLowerCase().includes(term) || 
         pkg.location?.toLowerCase().includes(term)
       );
     }
@@ -100,7 +94,7 @@ const Packages = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-['Montserrat'] pb-20">
+    <div className="min-h-screen bg-slate-50 font-montserrat pb-20">
       <header className="relative pt-32 pb-20 px-6 bg-slate-900 overflow-hidden">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-emerald-500/10 skew-x-12 translate-x-20"></div>
         <div className="max-w-7xl mx-auto relative z-10">
@@ -149,7 +143,8 @@ const Packages = () => {
             {filteredPackages.map((pkg) => (
               <div 
                 key={pkg.id} 
-                onClick={() => navigate(`/activities/${pkg.category.toLowerCase()}/${pkg.id}`)} 
+                // Using template literal with pkg.source to handle destinations vs activities automatically
+                onClick={() => navigate(`/${pkg.source}/${pkg.category.toLowerCase()}/${pkg.id}`)} 
                 className="cursor-pointer transform hover:-translate-y-2 transition-all duration-300"
               >
                  <PackageCard data={pkg} />
