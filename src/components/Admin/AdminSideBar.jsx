@@ -11,7 +11,7 @@ import {
   Settings,
   ChevronRight,
   Mail,
-  ClipboardList // Icon for Bookings
+  ClipboardList ,ImageIcon// Icon for Bookings
 } from 'lucide-react';
 import AlertModal from '../../utils/AlertModal';
 
@@ -61,6 +61,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'destinations', label: 'Destinations', icon: Globe },
     { id: 'users', label: 'Travelers', icon: Users },
     { id: 'messages', label: 'Inquiries', icon: Mail },
+    { id: 'gallery', label: 'Gallery', icon: ImageIcon },
   ];
 
   return (

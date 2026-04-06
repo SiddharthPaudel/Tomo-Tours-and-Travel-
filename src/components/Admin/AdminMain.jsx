@@ -11,10 +11,11 @@ import { auth, db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import Booking from './Booking';
+import GalleryManager from './GalleryManager';
 
 const AdminMain = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminData, setAdminData] = useState({
+  const [adminData, setAdminData] = useState({  
     displayName: "Loading...",
     photoURL: "https://i.pravatar.cc/150?u=placeholder",
     role: "Admin"
@@ -105,6 +106,7 @@ const AdminMain = () => {
           {activeTab === 'activities' && <ActivityCRUD />}
           {activeTab === 'destinations' && <DestinationManager />}
           {activeTab === 'messages' && <InquiryManager />}
+          {activeTab === 'gallery' && <GalleryManager />}
         </div>
       </main>
     </div>
