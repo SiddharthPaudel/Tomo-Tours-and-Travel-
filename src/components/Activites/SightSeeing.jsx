@@ -3,11 +3,11 @@ import { db, auth } from "../../services/firebase";
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
-  MapPin, Binoculars, Calendar, ArrowRight, 
   Landmark, Loader2, X, Phone, Users, CalendarDays,
-  ChevronLeft, CheckCircle, History, Car, Ticket, Languages
+  ChevronLeft, CheckCircle, History, Car, Calendar, Languages, Binoculars
 } from 'lucide-react';
 import AlertModal from '../../utils/AlertModal';
+import PackageCard from '../Cards/PackageCard'; // Ensure this path is correct
 import { useParams, useNavigate } from 'react-router-dom';
 
 const SightSeeingActivity = () => {
@@ -36,13 +36,11 @@ const SightSeeingActivity = () => {
       const tours = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllTours(tours);
 
-      // If there's an ID in the URL, find the corresponding tour
       if (id) {
         const foundTour = tours.find(t => t.id === id);
         if (foundTour) {
           setSelectedTour(foundTour);
         } else {
-          // If ID is invalid, clear selection and go back to list
           setSelectedTour(null);
           navigate('/activities/sightseeing');
         }
@@ -57,7 +55,7 @@ const SightSeeingActivity = () => {
       unsubscribeAuth();
       unsubscribeData();
     };
-  }, [id, navigate]); // Re-run when ID in URL changes
+  }, [id, navigate]);
 
   const handleBack = () => {
     setSelectedTour(null);
@@ -71,19 +69,12 @@ const SightSeeingActivity = () => {
 
   const handleBookNow = async () => {
     const phoneRegex = /^9\d{9}$/;
-
     if (!customerDetails.phone || !customerDetails.travelDate) {
       setAlertConfig({ show: true, type: 'warning', title: 'Action Required', message: 'Please select a date and enter your phone number.' });
       return;
     }
-
     if (!phoneRegex.test(customerDetails.phone)) {
-      setAlertConfig({ 
-        show: true, 
-        type: 'error', 
-        title: 'Invalid Phone', 
-        message: 'Please enter a valid 10-digit mobile number starting with 9.' 
-      });
+      setAlertConfig({ show: true, type: 'error', title: 'Invalid Phone', message: 'Please enter a valid 10-digit mobile number starting with 9.' });
       return;
     }
 
@@ -102,7 +93,6 @@ const SightSeeingActivity = () => {
         status: 'pending',
         createdAt: serverTimestamp()
       });
-
       setAlertConfig({ show: true, title: "Booking Success!", message: "We will contact you shortly to finalize your heritage tour.", type: 'success' });
       setShowBookingForm(false);
     } catch (e) {
@@ -118,6 +108,7 @@ const SightSeeingActivity = () => {
     </div>
   );
 
+  // DETAIL VIEW
   if (selectedTour) {
     const details = selectedTour.details || {};
     const itinerarySteps = details.itinerary ? details.itinerary.split('\n').filter(s => s.trim()) : [];
@@ -141,18 +132,11 @@ const SightSeeingActivity = () => {
               <button onClick={() => setShowBookingForm(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900">
                 <X size={24} />
               </button>
-
               <h3 className="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tighter">Reserve Your Spot</h3>
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 uppercase ml-1 flex items-center gap-2"><Phone size={10}/> Phone Number</label>
-                  <input 
-                    type="tel" 
-                    maxLength="10"
-                    placeholder="98XXXXXXXX" 
-                    className="w-full p-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none border-2 border-transparent focus:border-amber-500/20" 
-                    onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})} 
-                  />
+                  <input type="tel" maxLength="10" placeholder="98XXXXXXXX" className="w-full p-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none border-2 border-transparent focus:border-amber-500/20" onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -183,9 +167,7 @@ const SightSeeingActivity = () => {
           <div className="absolute bottom-16 left-10 md:left-24 animate-in slide-in-from-left duration-700">
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-[3rem] shadow-2xl max-w-2xl">
               <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.4em] mb-4 block">Cultural Immersions</span>
-              <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">
-                {selectedTour.title}
-              </h1>
+              <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">{selectedTour.title}</h1>
             </div>
           </div>
         </div>
@@ -194,22 +176,16 @@ const SightSeeingActivity = () => {
           <div className="lg:col-span-2 space-y-16">
             <section>
               <h2 className="text-xs font-black text-amber-600 uppercase tracking-[0.3em] mb-6">The Experience</h2>
-              <p className="text-lg text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
-                {details.overview || "Embark on a journey through the cultural heart of Nepal..."}
-              </p>
+              <p className="text-lg text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{details.overview || "Embark on a journey through the cultural heart of Nepal..."}</p>
             </section>
-
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {highlights.map((h, i) => (
                 <div key={i} className="flex items-center gap-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:border-amber-200 transition-all">
-                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                    <CheckCircle size={20} />
-                  </div>
+                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><CheckCircle size={20} /></div>
                   <span className="text-[11px] font-black text-slate-700 uppercase">{h}</span>
                 </div>
               ))}
             </section>
-
             <section>
               <h2 className="text-xs font-black text-amber-600 uppercase tracking-[0.3em] mb-10">Route Timeline</h2>
               <div className="space-y-0">
@@ -219,9 +195,7 @@ const SightSeeingActivity = () => {
                       <div className="w-4 h-4 rounded-full bg-amber-600 ring-4 ring-amber-100 group-hover:scale-125 transition-all"></div>
                       {i !== itinerarySteps.length - 1 && <div className="w-0.5 h-20 bg-slate-200 my-1"></div>}
                     </div>
-                    <div className="pb-10">
-                      <p className="text-sm font-black text-slate-800 uppercase group-hover:text-amber-600 transition-colors">{step}</p>
-                    </div>
+                    <div className="pb-10"><p className="text-sm font-black text-slate-800 uppercase group-hover:text-amber-600 transition-colors">{step}</p></div>
                   </div>
                 ))}
               </div>
@@ -236,28 +210,12 @@ const SightSeeingActivity = () => {
                   <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Package Cost</p>
                   <h3 className="text-5xl font-black tracking-tighter">Rs. {selectedTour.price}</h3>
                 </div>
-                
                 <div className="space-y-5 py-8 border-y border-white/10 mb-10">
-                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
-                    <span className="flex items-center gap-2"><Car size={14}/> Vehicle</span>
-                    <span className="text-white">{details.vehicleType || 'Private Car'}</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
-                    <span className="flex items-center gap-2"><Calendar size={14}/> Duration</span>
-                    <span className="text-white">{details.duration || '1'} Day(s)</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
-                    <span className="flex items-center gap-2"><Languages size={14}/> Guide</span>
-                    <span className="text-white">{details.isGuideIncluded ? "Professional" : "On Request"}</span>
-                  </div>
+                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400"><span className="flex items-center gap-2"><Car size={14}/> Vehicle</span><span className="text-white">{details.vehicleType || 'Private Car'}</span></div>
+                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400"><span className="flex items-center gap-2"><Calendar size={14}/> Duration</span><span className="text-white">{details.duration || '1'} Day(s)</span></div>
+                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400"><span className="flex items-center gap-2"><Languages size={14}/> Guide</span><span className="text-white">{details.isGuideIncluded ? "Professional" : "On Request"}</span></div>
                 </div>
-
-                <button 
-                  onClick={() => currentUser ? setShowBookingForm(true) : setAlertConfig({show: true, title: 'Login Required', message: 'Please login to book.', type: 'error'})}
-                  className="w-full bg-amber-500 hover:bg-white hover:text-slate-900 py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl shadow-amber-900/20"
-                >
-                  Reserve Experience
-                </button>
+                <button onClick={() => currentUser ? setShowBookingForm(true) : setAlertConfig({show: true, title: 'Login Required', message: 'Please login to book.', type: 'error'})} className="w-full bg-amber-500 hover:bg-white hover:text-slate-900 py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl shadow-amber-900/20">Reserve Experience</button>
               </div>
             </div>
           </div>
@@ -266,6 +224,7 @@ const SightSeeingActivity = () => {
     );
   }
 
+  // GRID VIEW (Using PackageCard)
   return (
     <div className="min-h-screen bg-white font-['Montserrat'] pb-32">
       <AlertModal isOpen={alertConfig.show} onConfirm={() => setAlertConfig({ ...alertConfig, show: false })} {...alertConfig} />
@@ -279,34 +238,29 @@ const SightSeeingActivity = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {allTours.map((tour) => (
-            <div key={tour.id} className="group bg-white rounded-[3rem] overflow-hidden border border-slate-100 hover:shadow-2xl transition-all duration-500">
-              <div className="h-72 overflow-hidden relative">
-                <img src={tour.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={tour.title} />
-                <div className="absolute top-6 left-6">
-                  <span className="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[9px] font-black uppercase text-amber-900 tracking-widest shadow-sm">{tour.tag || 'Popular'}</span>
-                </div>
-              </div>
-              <div className="p-10">
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-4 group-hover:text-amber-600 transition-colors">{tour.title}</h3>
-                <div className="flex gap-4 py-6 border-y border-slate-50 mb-8">
-                  <div className="flex-1 border-r border-slate-100">
-                    <p className="text-[9px] font-black text-slate-300 uppercase mb-1">Duration</p>
-                    <p className="text-xs font-bold text-slate-700">{tour.details?.duration || '1'} Day(s)</p>
-                  </div>
-                  <div className="flex-1 pl-4">
-                    <p className="text-[9px] font-black text-slate-300 uppercase mb-1">Vehicle</p>
-                    <p className="text-xs font-bold text-slate-700 uppercase">{tour.details?.vehicleType || 'Private'}</p>
-                  </div>
-                </div>
-                <button onClick={() => handleTourSelection(tour)} className="w-full py-5 bg-slate-50 text-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-600 hover:text-white transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-amber-100">
-                  Explore Heritage <ArrowRight size={16} />
-                </button>
-              </div>
+            <div 
+              key={tour.id} 
+              onClick={() => handleTourSelection(tour)} 
+              className="cursor-pointer transition-transform duration-500 hover:-translate-y-2"
+            >
+              <PackageCard 
+                data={{
+                  ...tour, 
+                  category: 'Sightseeing'
+                }} 
+              />
             </div>
           ))}
         </div>
+
+        {allTours.length === 0 && !loading && (
+          <div className="text-center py-20">
+            <Binoculars size={48} className="mx-auto text-slate-200 mb-4" />
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">No heritage tours found</p>
+          </div>
+        )}
       </main>
     </div>
   );

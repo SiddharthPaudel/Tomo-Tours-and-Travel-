@@ -5,7 +5,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mountain, ArrowRight, ChevronLeft, CheckCircle, 
-  Loader2, X, Phone, Users, Clock, Gauge, Tent, CalendarDays
+  Loader2, X, Phone, Users, Clock, Gauge, Tent, CalendarDays,
+  Check, Info
 } from 'lucide-react';
 
 import AlertModal from '../../utils/AlertModal';
@@ -29,34 +30,30 @@ const TrekActivity = () => {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    
     const q = query(collection(db, "activities"), where("category", "==", "trekking"));
     
     const unsubscribeData = onSnapshot(q, (snapshot) => {
       const treks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllTreks(treks);
 
-      // Deep linking logic from Sightseeing
       if (id) {
         const found = treks.find(t => t.id === id);
-        if (found) {
-          setSelectedTrek(found);
-        } else {
-          setSelectedTrek(null);
-          navigate('/activities/trekking'); 
-        }
+        if (found) setSelectedTrek(found);
+        else navigate('/activities/trekking'); 
       } else {
         setSelectedTrek(null);
       }
-      
       setLoading(false);
     });
 
-    return () => {
-      unsubscribeAuth();
-      unsubscribeData();
-    };
+    return () => { unsubscribeAuth(); unsubscribeData(); };
   }, [id, navigate]);
+
+  // Helper to split strings into arrays for clean listing
+  const formatList = (text) => {
+    if (!text || text.trim() === "") return [];
+    return text.split(/[\n•]+/).filter(item => item.trim() !== '');
+  };
 
   const handleBack = () => {
     setSelectedTrek(null);
@@ -109,14 +106,15 @@ const TrekActivity = () => {
     </div>
   );
 
-  // --- DETAIL VIEW ---
   if (selectedTrek) {
     const details = selectedTrek.details || {};
-    const highlights = details.highlights ? details.highlights.split('\n').filter(h => h.trim()) : [];
-    const itinerarySteps = details.itinerary ? details.itinerary.split('\n').filter(s => s.trim()) : [];
+    const highlights = formatList(details.highlights);
+    const itinerarySteps = formatList(details.itinerary);
+    const costIncludes = formatList(details.costIncludes);
+    const costExcludes = formatList(details.costExcludes);
 
     return (
-      <div className="min-h-screen bg-white font-['Montserrat'] animate-in fade-in duration-700">
+      <div className="min-h-screen bg-white font-['Montserrat'] animate-in fade-in duration-700 pb-20">
         <AlertModal 
           isOpen={alertConfig.show} 
           onConfirm={() => { 
@@ -126,6 +124,7 @@ const TrekActivity = () => {
           {...alertConfig} 
         />
 
+        {/* BOOKING MODAL */}
         {showBookingForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowBookingForm(false)}></div>
@@ -157,25 +156,28 @@ const TrekActivity = () => {
           </div>
         )}
 
+        {/* HERO */}
         <div className="relative h-[65vh] overflow-hidden">
           <button onClick={handleBack} className="absolute top-10 left-10 z-30 bg-white/20 backdrop-blur-xl p-4 rounded-full text-white hover:bg-white hover:text-emerald-600 transition-all">
             <ChevronLeft size={24} />
           </button>
           <img src={selectedTrek.image} className="w-full h-full object-cover" alt={selectedTrek.title} />
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
-          <div className="absolute bottom-16 left-10 md:left-24 animate-in slide-in-from-left duration-700">
+          <div className="absolute bottom-16 left-10 md:left-24">
             <span className="bg-emerald-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest mb-4 inline-block shadow-lg">Trekking Adventure</span>
             <h1 className="text-4xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.85]">{selectedTrek.title}</h1>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16">
-          <div className="lg:col-span-2 space-y-16">
+          <div className="lg:col-span-2 space-y-20">
+            {/* OVERVIEW */}
             <section>
               <h2 className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] mb-6">Overview</h2>
               <p className="text-lg text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{details.overview}</p>
             </section>
 
+            {/* HIGHLIGHTS */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {highlights.map((h, i) => (
                 <div key={i} className="flex items-center gap-4 p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
@@ -185,8 +187,37 @@ const TrekActivity = () => {
               ))}
             </section>
 
+            {/* COST INCLUDES/EXCLUDES SECTION */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-12 py-16 border-y border-slate-100">
+              <div>
+                <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
+                  <Check size={18} className="p-1 bg-emerald-100 rounded-full"/> Cost Includes
+                </h3>
+                <div className="space-y-4">
+                  {costIncludes.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 text-[12px] font-bold text-slate-500 uppercase">
+                      <span className="text-emerald-500">•</span> {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
+                  <X size={18} className="p-1 bg-rose-100 rounded-full"/> Cost Excludes
+                </h3>
+                <div className="space-y-4">
+                  {costExcludes.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 text-[12px] font-bold text-slate-400 uppercase">
+                      <span className="text-rose-300">•</span> {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* ITINERARY */}
             <section>
-              <h2 className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] mb-10">Itinerary</h2>
+              <h2 className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] mb-10">Expedition Timeline</h2>
               <div className="space-y-0">
                 {itinerarySteps.map((step, i) => (
                   <div key={i} className="flex gap-8 group">
@@ -203,6 +234,7 @@ const TrekActivity = () => {
             </section>
           </div>
 
+          {/* SIDEBAR STICKY */}
           <div className="lg:col-span-1">
             <div className="sticky top-32 bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
               <Tent size={150} className="absolute -bottom-10 -right-10 text-white/5" />
@@ -232,11 +264,8 @@ const TrekActivity = () => {
     );
   }
 
-  // --- LIST VIEW ---
   return (
     <div className="min-h-screen bg-white font-['Montserrat'] pb-32">
-      <AlertModal isOpen={alertConfig.show} onConfirm={() => setAlertConfig({ ...alertConfig, show: false })} {...alertConfig} />
-
       <header className="py-28 px-10 bg-slate-950 text-white relative overflow-hidden">
         <Mountain size={400} className="absolute -bottom-20 -right-20 text-white/5" />
         <div className="relative z-10 max-w-4xl">
@@ -244,17 +273,10 @@ const TrekActivity = () => {
           <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter uppercase leading-[0.75]">Trekking<br/>Nepal.</h1>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-6 py-24">
-        {/* Same Grid spacing as your PackageCard logic */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {allTreks.map((trek) => (
-            <div 
-              key={trek.id} 
-              onClick={() => handleTrekSelection(trek)} 
-              className="cursor-pointer"
-            >
-              {/* Injecting PackageCard with Trek data */}
+            <div key={trek.id} onClick={() => handleTrekSelection(trek)} className="cursor-pointer">
               <PackageCard data={{...trek, category: 'Trekking'}} />
             </div>
           ))}

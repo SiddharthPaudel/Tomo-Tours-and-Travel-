@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from "../../services/firebase"; 
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useParams, useNavigate } from 'react-router-dom'; // Added for ID logic
 import { 
-  Waves, Clock, Zap, ArrowRight, Droplets, Flame, Anchor, LayoutGrid, Info,
-  ChevronLeft, CheckCircle, XCircle, Shield, LifeBuoy, Map, X, Loader2, HeartPulse, UserCheck, Phone,CalendarDays, Users
+  Waves, Clock, Zap, Info, ChevronLeft, CheckCircle, XCircle, 
+  Shield, LifeBuoy, Map, X, Loader2, HeartPulse, UserCheck, 
+  Phone, CalendarDays, Users, Anchor 
 } from 'lucide-react';
 import AlertModal from '../../utils/AlertModal';
+import PackageCard from '../Cards/PackageCard'; // Ensure correct path
 
 const RaftingActivity = () => {
+  const { id } = useParams(); // Get ID from URL
+  const navigate = useNavigate();
+
   // 1. STATE MANAGEMENT
   const [allTrips, setAllTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,15 +59,29 @@ const RaftingActivity = () => {
         };
       });
       setAllTrips(trips);
+
+      // Handle ID logic: If ID exists in URL, auto-select that trip
+      if (id) {
+        const foundTrip = trips.find(t => t.id === id);
+        if (foundTrip) setSelectedTrip(foundTrip);
+      } else {
+        setSelectedTrip(null);
+      }
+
       setLoading(false);
     });
 
     return () => { unsubscribeAuth(); unsubscribeData(); };
-  }, []);
+  }, [id]);
 
-  // 3. BOOKING LOGIC WITH VALIDATION
+  // Handle Close (clear ID from URL)
+  const handleCloseDetail = () => {
+    setSelectedTrip(null);
+    navigate('/activities/rafting'); // Adjusted to your route structure
+  };
+
+  // 3. BOOKING LOGIC
   const handleFinalBooking = async () => {
-    // Validation: Exactly 10 digits and starting with 9
     const phoneRegex = /^9\d{9}$/;
 
     if (!customerDetails.phone || !customerDetails.travelDate) {
@@ -121,11 +141,11 @@ const RaftingActivity = () => {
       <div className="min-h-screen bg-white font-montserrat pb-20 animate-in fade-in duration-500">
         <AlertModal 
           isOpen={alertConfig.show} 
-          onConfirm={() => { setAlertConfig({ ...alertConfig, show: false }); if (alertConfig.type === 'success') setSelectedTrip(null); }}
+          onConfirm={() => { setAlertConfig({ ...alertConfig, show: false }); if (alertConfig.type === 'success') handleCloseDetail(); }}
           {...alertConfig} 
         />
 
-        {/* BOOKING MODAL */}
+        {/* BOOKING MODAL (Same as before) */}
         {showBookingForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
             <div className="absolute inset-0 bg-blue-950/60 backdrop-blur-md" onClick={() => setShowBookingForm(false)}></div>
@@ -135,13 +155,7 @@ const RaftingActivity = () => {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-slate-400 uppercase ml-1 flex items-center gap-2"><Phone size={10}/> Phone Number</label>
-                  <input 
-                    type="tel" 
-                    maxLength="10"
-                    placeholder="98XXXXXXXX" 
-                    className="w-full p-5 bg-slate-50 rounded-2xl text-xs font-bold outline-none border-2 border-transparent focus:border-blue-500/20" 
-                    onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})} 
-                  />
+                  <input type="tel" maxLength="10" placeholder="98XXXXXXXX" className="w-full p-5 bg-slate-50 rounded-2xl text-xs font-bold outline-none border-2 border-transparent focus:border-blue-500/20" onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -165,7 +179,7 @@ const RaftingActivity = () => {
 
         {/* HERO AREA */}
         <div className="relative h-[65vh] w-full">
-          <button onClick={() => setSelectedTrip(null)} className="absolute top-8 left-8 z-20 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white hover:text-blue-900 shadow-xl transition-all"><ChevronLeft size={24} /></button>
+          <button onClick={handleCloseDetail} className="absolute top-8 left-8 z-20 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white hover:text-blue-900 shadow-xl transition-all"><ChevronLeft size={24} /></button>
           <img src={selectedTrip.image} alt={selectedTrip.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10"></div>
           <div className="absolute bottom-12 left-8 md:left-20">
@@ -174,16 +188,14 @@ const RaftingActivity = () => {
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* CONTENT (Overview, Safety, Timeline, Highlights, etc.) */}
         <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16">
           <div className="lg:col-span-2 space-y-16">
             <section>
               <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mb-4 flex items-center gap-3">
                 <Info size={24} className="text-blue-600"/> Trip Overview
               </h2>
-              <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
-                {selectedTrip.overview}
-              </p>
+              <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">{selectedTrip.overview}</p>
             </section>
 
             <section>
@@ -216,6 +228,7 @@ const RaftingActivity = () => {
                 </div>
             </section>
 
+            {/* Highlights, Includes, Excludes (Same as before) */}
             <section>
               <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mb-8">Highlights</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -252,6 +265,7 @@ const RaftingActivity = () => {
             </div>
           </div>
 
+          {/* SIDEBAR PRICE CARD */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 bg-blue-950 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden group">
                 <div className="relative z-10">
@@ -282,6 +296,7 @@ const RaftingActivity = () => {
     );
   }
 
+  // 5. MAIN GRID VIEW
   return (
     <div className="min-h-screen bg-white font-montserrat pb-20">
       <AlertModal isOpen={alertConfig.show} onConfirm={() => setAlertConfig({ ...alertConfig, show: false })} {...alertConfig} />
@@ -297,60 +312,23 @@ const RaftingActivity = () => {
         <Waves size={400} className="absolute -bottom-20 -right-20 text-blue-900 opacity-10 rotate-12" />
       </section>
 
+      {/* TRIP GRID USING PACKAGE CARD */}
       {/* TRIP GRID */}
-      <section className="max-w-7xl mx-auto px-6 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {allTrips.map((trip) => (
-            <div 
-              key={trip.id} 
-              className="group relative bg-slate-900 rounded-[3rem] overflow-hidden cursor-pointer h-[550px] shadow-2xl transition-all duration-700 hover:-translate-y-3"
-              onClick={() => setSelectedTrip(trip)}
-            >
-              <div className="absolute inset-0">
-                <img 
-                  src={trip.image} 
-                  alt={trip.title} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-70 group-hover:opacity-100" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-90 transition-opacity"></div>
-              </div>
-
-              <div className="absolute inset-0 p-12 flex flex-col justify-end">
-                <div className="translate-y-6 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="bg-blue-600 text-white px-5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] mb-5 inline-block shadow-xl">
-                    {trip.tag}
-                  </span>
-                  <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-6">
-                    {trip.title}
-                  </h3>
-                  
-                  <div className="flex gap-6 pt-6 border-t border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100">
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Clock size={14}/>
-                      <span className="text-[10px] font-black uppercase tracking-widest">{trip.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Zap size={14}/>
-                      <span className="text-[10px] font-black uppercase tracking-widest">{trip.difficulty}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute top-10 right-10 bg-white/10 backdrop-blur-md p-5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-500 scale-50 group-hover:scale-100 border border-white/20">
-                  <ArrowRight size={20} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {allTrips.length === 0 && !loading && (
-          <div className="text-center py-20">
-            <Waves size={48} className="mx-auto text-slate-200 mb-4" />
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">No river expeditions found</p>
-          </div>
-        )}
-      </section>
+<section className="max-w-7xl mx-auto px-6 py-24">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+    {allTrips.map((trip) => (
+      /* 1. Wrap in a div with onClick to match your Trekking logic */
+      <div 
+        key={trip.id} 
+        onClick={() => setSelectedTrip(trip)} 
+        className="cursor-pointer transition-transform duration-500 hover:-translate-y-2"
+      >
+        {/* 2. Pass the data prop exactly like you do in Trekking */}
+        <PackageCard data={{ ...trip, category: 'Rafting' }} />
+      </div>
+    ))}
+  </div>
+</section>
     </div>
   );
 };

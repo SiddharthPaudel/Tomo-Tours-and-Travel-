@@ -79,12 +79,12 @@ const InternationalActivity = () => {
 
   const handleBack = () => {
     setSelectedIntl(null);
-    navigate('/activities/international'); 
+    navigate('/destinations/international'); 
   };
 
   const handleSelection = (dest) => {
     setSelectedIntl(dest);
-    navigate(`/activities/international/${dest.id}`);
+    navigate(`/destinations/international/${dest.id}`);
   };
 
   const handleBookingSubmit = async (e) => {
