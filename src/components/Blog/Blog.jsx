@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Clock, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import blog1 from "../../images/hero8.jpg";
 import blog2 from "../../images/manaslu.webp";
 import blog3 from "../../images/Temple.jpg";
@@ -39,9 +39,6 @@ const BlogSection = () => {
               Stories from <br/> <span className="text-slate-300">the Edge.</span>
             </h2>
           </div>
-          {/* <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-900 hover:text-emerald-600 transition-colors border-b-2 border-slate-900 hover:border-emerald-600 pb-1">
-            Explore All Articles <ArrowRight size={14} />
-          </button> */}
         </div>
 
         {/* --- ASYMMETRIC GRID --- */}
@@ -49,7 +46,7 @@ const BlogSection = () => {
           
           {/* FEATURED POST (Left - 7 Columns) */}
           <div className="lg:col-span-7 group cursor-pointer">
-            <div className="relative overflow-hidden rounded-[2rem] mb-8 aspect-[16/10]">
+            <div className="relative overflow-hidden rounded-[2.5rem] mb-8 aspect-[16/10] shadow-2xl shadow-slate-200/50">
               <img 
                 src={blog1} 
                 alt="Featured trek" 
@@ -77,13 +74,13 @@ const BlogSection = () => {
           </div>
 
           {/* TRENDING POSTS (Right - 5 Columns) */}
-          <div className="lg:col-span-5 flex flex-col gap-10">
+          <div className="lg:col-span-5 flex flex-col gap-8 md:gap-10">
             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Trending Now</h4>
             
             {trendingPosts.map((post, idx) => (
               <div key={idx} className="group flex items-center gap-6 cursor-pointer">
                 {/* Small Image */}
-                <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-2xl overflow-hidden shadow-lg border-2 border-transparent group-hover:border-emerald-500 transition-all">
+                <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-3xl overflow-hidden shadow-lg border-2 border-transparent group-hover:border-emerald-500 transition-all duration-500">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
                 </div>
                 
@@ -102,18 +99,13 @@ const BlogSection = () => {
                 </div>
               </div>
             ))}
-
-            {/* Newsletter Mini-Card */}
-            <div className="mt-4 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-              <h5 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2">Get the Digest</h5>
-              <p className="text-xs text-slate-500 mb-4">Adventure insights delivered weekly.</p>
-              <div className="flex gap-2">
-                <input type="text" placeholder="Email" className="flex-1 bg-white border border-slate-200 rounded-lg px-4 text-xs focus:outline-none focus:border-emerald-500" />
-                <button className="p-3 bg-slate-900 text-white rounded-lg hover:bg-emerald-600 transition-colors">
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
+            
+            {/* Added a subtle call to action button at the bottom since the newsletter was removed */}
+            {/* <div className="mt-6 pt-6 border-t border-slate-50">
+               <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 hover:text-emerald-600 transition-all group">
+                View All Journal Entries <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div> */}
           </div>
 
         </div>

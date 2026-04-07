@@ -1,10 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import { Compass, Zap, Map, Heart, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import hero1 from "../../images/hero2.jpg";
 import hero2 from "../../images/hero7.jpg";
 import hero3 from "../../images/hero5.jpg";
 
 const AboutUs = () => {
+  const navigate = useNavigate(); // 2. Initialize navigate
+
   const values = [
     { icon: <ShieldCheck size={20} />, title: "Trusted Partner", desc: "Seamless & Managed." },
     { icon: <Zap size={20} />, title: "Expertly Crafted", desc: "Dreams into reality." },
@@ -44,7 +47,7 @@ const AboutUs = () => {
           {/* RIGHT SIDE: TEXT CONTENT */}
           <div className="w-full lg:w-1/2 text-left">
             <div className="inline-block px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-[0.2em] rounded-sm mb-5">
-              Welcome to Tomo GlobeWise
+              Welcome to Tomo Tours and Travel
             </div>
             
             <h2 className="text-3xl md:text-5xl font-black text-slate-800 uppercase tracking-tighter leading-tight mb-6">
@@ -54,11 +57,11 @@ const AboutUs = () => {
 
             <div className="space-y-5 mb-10">
               <p className="text-slate-800 text-sm md:text-base font-bold leading-relaxed max-w-lg">
-                At Tomo GlobeWise Tours & Travel, we specialize in transforming your travel dreams into reality with expertly crafted packages from Nepal and beyond.
+                At Tomo Tours and Travel, we specialize in transforming your travel dreams into reality with expertly crafted packages from Nepal and beyond.
               </p>
               
               <p className="text-slate-500 text-sm leading-relaxed max-w-lg">
-                We are a passionate team of experts dedicated to creating exceptional experiences—from breathtaking international expeditions to immersive local adventures. Whether it's a holiday, honeymoon, or a spiritual journey, we ensure every detail is perfectly managed.
+                We are a passionate team of experts dedicated to creating exceptional experiences—from breathtaking international expeditions to immersive local adventures.
               </p>
             </div>
 
@@ -81,7 +84,11 @@ const AboutUs = () => {
               ))}
             </div>
 
-            <button className="group flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-full font-black uppercase text-[9px] tracking-[0.2em] hover:bg-emerald-700 transition-all shadow-lg active:scale-95">
+            {/* 3. Added onClick handler */}
+            <button 
+              onClick={() => navigate('/packagepage')}
+              className="group flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-full font-black uppercase text-[9px] tracking-[0.2em] hover:bg-emerald-700 transition-all shadow-lg active:scale-95"
+            >
               Explore Our Packages
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>

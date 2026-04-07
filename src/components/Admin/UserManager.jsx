@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ShieldAlert, User, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ShieldAlert, User, Mail, CheckCircle, XCircle, Calendar, Loader2 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from "../../services/firebase";
 
@@ -18,10 +18,8 @@ const UserManager = () => {
           const data = doc.data();
           return {
             id: doc.id,
-            // Mapping specifically to your 'displayName' field
             username: data.displayName || "Unnamed Traveler",
             email: data.email || "No Email Provided",
-            // Mapping to your 'emailVerified' boolean field
             isVerified: data.emailVerified === true, 
             joinDate: data.createdAt?.toDate ? 
               data.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 
@@ -48,18 +46,19 @@ const UserManager = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 font-['Montserrat']">
-        <div className="w-12 h-12 border-[3px] border-slate-100 border-t-emerald-500 rounded-full animate-spin"></div>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Syncing Traveler Cloud</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 font-['Montserrat'] max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-700 font-['Montserrat'] max-w-[1400px] mx-auto">
       
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Traveler Directory</h2>
+      {/* HEADER & SEARCH SECTION */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
+        <div className="w-full sm:w-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase">Traveler Directory</h2>
           <div className="flex items-center gap-3 mt-2 bg-slate-900 w-fit px-4 py-1.5 rounded-full">
             <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
             <p className="text-[9px] font-black text-white uppercase tracking-widest">
@@ -68,7 +67,7 @@ const UserManager = () => {
           </div>
         </div>
         
-        <div className="relative w-full lg:w-96 group">
+        <div className="relative w-full xl:w-96 group">
           <Search 
             className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
               searchQuery ? 'text-emerald-500' : 'text-slate-300'
@@ -80,12 +79,49 @@ const UserManager = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 focus:border-emerald-500/20 focus:ring-[6px] focus:ring-emerald-500/5 rounded-[1.5rem] text-xs font-bold outline-none transition-all shadow-sm group-hover:shadow-md"
+            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 focus:border-emerald-500/20 focus:ring-[6px] focus:ring-emerald-500/5 rounded-2xl md:rounded-[1.5rem] text-xs font-bold outline-none transition-all shadow-sm group-hover:shadow-md"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+      {/* MOBILE & TABLET CARD VIEW (Visible < 1024px) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
+            <div key={user.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{user.username}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                       <Calendar size={10} className="text-slate-300" />
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Since {user.joinDate}</span>
+                    </div>
+                  </div>
+                </div>
+                <span className={`p-1.5 rounded-lg border ${
+                  user.isVerified ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+                }`}>
+                  {user.isVerified ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                </span>
+              </div>
+              
+              <div className="pt-3 border-t border-slate-50 flex items-center gap-2 text-slate-500">
+                <Mail size={14} className="opacity-30" />
+                <span className="text-xs font-bold truncate">{user.email}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <EmptyState />
+        )}
+      </div>
+
+      {/* DESKTOP TABLE VIEW (Visible >= 1024px) */}
+      <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -101,7 +137,6 @@ const UserManager = () => {
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50/40 transition-all group">
-                    {/* DISPLAY NAME COLUMN */}
                     <td className="px-10 py-7">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center transition-all group-hover:bg-emerald-600 group-hover:rotate-6">
@@ -113,7 +148,6 @@ const UserManager = () => {
                       </div>
                     </td>
 
-                    {/* EMAIL ADDRESS COLUMN */}
                     <td className="px-10 py-7">
                       <div className="flex items-center gap-2 text-slate-500">
                         <Mail size={14} className="opacity-30" />
@@ -121,7 +155,6 @@ const UserManager = () => {
                       </div>
                     </td>
 
-                    {/* ACQUIRED DATE */}
                     <td className="px-10 py-7 text-center">
                       <div className="inline-flex flex-col items-center">
                          <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{user.joinDate}</span>
@@ -129,14 +162,13 @@ const UserManager = () => {
                       </div>
                     </td>
 
-                    {/* VERIFICATION STATUS CHIP */}
                     <td className="px-10 py-7 text-right">
                       <span className={`inline-flex items-center gap-2 text-[9px] font-black uppercase px-4 py-2 rounded-xl border-2 transition-all ${
                         user.isVerified 
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' 
                           : 'bg-rose-50 text-rose-600 border-rose-100/50'
                       }`}>
-                        {user.isVerified ? <CheckCircle size={12} className="animate-in fade-in" /> : <XCircle size={12} />}
+                        {user.isVerified ? <CheckCircle size={12} /> : <XCircle size={12} />}
                         {user.isVerified ? 'Verified' : 'Unverified'}
                       </span>
                     </td>
@@ -144,14 +176,7 @@ const UserManager = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-10 py-40 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="p-6 bg-slate-50 rounded-full mb-4">
-                        <ShieldAlert size={48} className="text-slate-200" />
-                      </div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Zero matches found in directory</p>
-                    </div>
-                  </td>
+                  <td colSpan="4" className="py-20"><EmptyState /></td>
                 </tr>
               )}
             </tbody>
@@ -161,5 +186,15 @@ const UserManager = () => {
     </div>
   );
 };
+
+// Extracted Empty State for clean reuse
+const EmptyState = () => (
+  <div className="flex flex-col items-center py-20 px-10 text-center w-full bg-white rounded-3xl lg:bg-transparent">
+    <div className="p-6 bg-slate-50 rounded-full mb-4">
+      <ShieldAlert size={40} className="text-slate-200" />
+    </div>
+    <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">Zero matches found in directory</p>
+  </div>
+);
 
 export default UserManager;

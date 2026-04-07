@@ -146,7 +146,7 @@ const GalleryManager = () => {
               className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-20 shadow-xl flex items-center justify-center gap-2"
             >
               {uploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-              {uploading ? "Processing" : "Add to Cloud"}
+              {uploading ? "Processing" : "Add Photos"}
             </button>
           </div>
         </div>

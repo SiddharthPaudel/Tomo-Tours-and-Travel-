@@ -180,6 +180,9 @@ const ContactPage = () => {
                   <option>Trekking</option>
                   <option>Hiking</option>
                   <option>Rafting</option>
+                  <option>SightSeeing</option>
+                  <option>Domestic Tour</option>
+                  <option>International Tour</option>
                   <option>Custom Tour</option>
                 </select>
               </div>

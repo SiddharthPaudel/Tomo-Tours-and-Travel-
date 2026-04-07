@@ -59,18 +59,47 @@ const DomesticActivity = () => {
     return () => unsubscribe();
   }, [id]);
 
-  const handleBookingSubmit = async (e) => {
+const handleBookingSubmit = async (e) => {
     e.preventDefault();
     
-    // --- VALIDATION ---
+    // --- UPDATED VALIDATION ---
+    
+    // 1. Date Validation
     if (!bookingData.date || bookingData.date < today) {
-      setAlertConfig({ show: true, title: "Invalid Date", message: "Please select a valid future date for your expedition.", type: 'warning' });
+      setAlertConfig({ 
+        show: true, 
+        title: "Invalid Date", 
+        message: "Please select a valid future date for your expedition.", 
+        type: 'warning' 
+      });
       return;
     }
-    if (!bookingData.phone || bookingData.phone.length < 7) {
-      setAlertConfig({ show: true, title: "Phone Required", message: "Please enter a valid contact number.", type: 'warning' });
+
+    // 2. Phone Number Validation (Nepal Standard)
+    // Regex explanation: Starts with 9, followed by 7, 8, or 6 (common prefixes), total 10 digits
+    const phoneRegex = /^9[678]\d{8}$/; 
+    
+    if (!bookingData.phone) {
+      setAlertConfig({ 
+        show: true, 
+        title: "Phone Required", 
+        message: "We need a contact number to coordinate your trip.", 
+        type: 'warning' 
+      });
       return;
     }
+
+    if (!phoneRegex.test(bookingData.phone)) {
+      setAlertConfig({ 
+        show: true, 
+        title: "Invalid Number", 
+        message: "Please enter a valid 10-digit mobile number starting with 9.", 
+        type: 'warning' 
+      });
+      return;
+    }
+
+    // --- END VALIDATION ---
 
     setIsSubmitting(true);
     try {
@@ -81,7 +110,7 @@ const DomesticActivity = () => {
         phone: bookingData.phone,
         travelDate: bookingData.date,
         travelers: bookingData.travelers,
-        packageName: selectedDest.name, // Matches admin table 'packageName'
+        packageName: selectedDest.name,
         packagePrice: selectedDest.budget,
         packageType: 'domestic',
         status: 'pending',
@@ -89,11 +118,23 @@ const DomesticActivity = () => {
       });
 
       setShowBookingModal(false);
-      setAlertConfig({ show: true, title: "Reservation Sent", message: `We have received your request for ${selectedDest.name}.`, type: 'success' });
+      setAlertConfig({ 
+        show: true, 
+        title: "Reservation Sent", 
+        message: `We have received your request for ${selectedDest.name}.`, 
+        type: 'success' 
+      });
       setBookingData(prev => ({ ...prev, phone: '', date: '', travelers: '1' }));
     } catch (error) {
-      setAlertConfig({ show: true, title: "Error", message: "Booking failed. Please check your connection.", type: 'error' });
-    } finally { setIsSubmitting(false); }
+      setAlertConfig({ 
+        show: true, 
+        title: "Error", 
+        message: "Booking failed. Please check your connection.", 
+        type: 'error' 
+      });
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const formatList = (text) => {

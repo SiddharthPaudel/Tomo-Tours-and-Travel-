@@ -6,8 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'; // Added for ID logic
 import { 
   Waves, Clock, Zap, Info, ChevronLeft, CheckCircle, XCircle, 
   Shield, LifeBuoy, Map, X, Loader2, HeartPulse, UserCheck, 
-  Phone, CalendarDays, Users, Anchor 
-} from 'lucide-react';
+  Phone, CalendarDays, Users, Anchor } from 'lucide-react';
 import AlertModal from '../../utils/AlertModal';
 import PackageCard from '../Cards/PackageCard'; // Ensure correct path
 
@@ -243,7 +242,7 @@ const RaftingActivity = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <section className="bg-emerald-50/50 p-10 rounded-[3rem] border border-emerald-100">
-                    <h2 className="text-lg font-black text-emerald-900 uppercase tracking-widest mb-6 flex items-center gap-2"><Shield size={20}/> Included</h2>
+                    <h2 className="text-lg font-black text-emerald-900 uppercase tracking-widest mb-6 flex items-center gap-2"><CheckCircle size={20} /> Cost Includes</h2>
                     <ul className="space-y-4">
                         {includes.map((item, i) => (
                             <li key={i} className="flex items-start gap-3 text-[11px] font-bold text-slate-700">
@@ -253,7 +252,7 @@ const RaftingActivity = () => {
                     </ul>
                 </section>
                 <section className="bg-rose-50/50 p-10 rounded-[3rem] border border-rose-100">
-                    <h2 className="text-lg font-black text-rose-900 uppercase tracking-widest mb-6 flex items-center gap-2"><XCircle size={20}/> Excluded</h2>
+                    <h2 className="text-lg font-black text-rose-900 uppercase tracking-widest mb-6 flex items-center gap-2"><XCircle size={20}/> Cost Excludes</h2>
                     <ul className="space-y-4">
                         {excludes.map((item, i) => (
                             <li key={i} className="flex items-start gap-3 text-[11px] font-bold text-slate-700">

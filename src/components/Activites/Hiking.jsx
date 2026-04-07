@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Footprints, Clock, ArrowRight, 
   CheckCircle, ChevronLeft, Mountain, Loader2, Send,
-  X, Phone, CalendarDays, Users, Info, MapPin
+  X, Phone, CalendarDays, Users, Info, MapPin,XCircle
 } from 'lucide-react';
 
 import AlertModal from '../../utils/AlertModal';
@@ -263,11 +263,15 @@ const renderItinerary = (text) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t border-slate-100">
                 <div className="space-y-6">
-                  <h3 className="text-emerald-600 font-black uppercase text-xs">Includes</h3>
+                  <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-8 flex items-center gap-2">
+                                    <CheckCircle size={16} /> Cost Includes
+                                  </h3>
                   <ul className="space-y-3">{includes.map((item, i) => <li key={i} className="text-[10px] font-bold text-slate-600 flex items-center gap-3 uppercase tracking-wide"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"/> {item}</li>)}</ul>
                 </div>
                 <div className="space-y-6">
-                  <h3 className="text-red-600 font-black uppercase text-xs">Excludes</h3>
+                 <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-8 flex items-center gap-2">
+                  <XCircle size={16} /> Cost Excludes
+                </h3>
                   <ul className="space-y-3">{excludes.map((item, i) => <li key={i} className="text-[10px] font-bold text-slate-500 flex items-center gap-3 uppercase tracking-wide italic"><div className="w-1.5 h-1.5 bg-red-400 rounded-full"/> {item}</li>)}</ul>
                 </div>
             </div>
