@@ -14,11 +14,9 @@ import GalleryManager from './GalleryManager';
 
 const AdminMain = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminData, setAdminData] = useState({  
-    displayName: "Loading...",
-    photoURL: "https://i.pravatar.cc/150?u=placeholder",
-    role: "Admin"
-  });
+  
+  // Initialize as null to prevent placeholder flickering on reload
+  const [adminData, setAdminData] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -33,14 +31,21 @@ const AdminMain = () => {
               role: data.role || "Admin"
             });
           } else {
-            setAdminData(prev => ({
-              ...prev,
+            // Fallback for authenticated users without a specific Firestore document
+            setAdminData({
               displayName: user.displayName || "Authorized User",
-              photoURL: user.photoURL || prev.photoURL
-            }));
+              photoURL: user.photoURL || `https://ui-avatars.com/api/?name=Admin&background=random`,
+              role: "Admin"
+            });
           }
         } catch (error) {
           console.error("Error fetching admin profile:", error);
+          // Set a safe fallback on error so the UI doesn't hang forever
+          setAdminData({
+            displayName: "Admin",
+            photoURL: "https://i.pravatar.cc/150",
+            role: "Admin"
+          });
         }
       } else {
         setAdminData({
@@ -55,7 +60,7 @@ const AdminMain = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFB] flex font-['Montserrat'] overflow-x-hidden">
-      {/* SIDEBAR - Logic for responsiveness is inside AdminSidebar component */}
+      {/* SIDEBAR */}
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* MAIN CONTENT AREA */}
@@ -64,7 +69,7 @@ const AdminMain = () => {
         {/* TOPBAR */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
           
-          {/* SEARCH - Hidden on small mobile to make room for the Profile */}
+          {/* SEARCH */}
           <div className="relative w-40 md:w-72 hidden sm:block ml-14 lg:ml-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
@@ -74,31 +79,43 @@ const AdminMain = () => {
             />
           </div>
 
-          {/* EMPTY DIV FOR FLEX SPACING ON MOBILE (When search is hidden) */}
           <div className="sm:hidden flex-grow" />
           
-          {/* PROFILE SECTION */}
+          {/* PROFILE SECTION WITH LOADING LOGIC */}
           <div className="flex items-center gap-3 md:gap-5 border-l border-slate-100 pl-4 md:pl-5">
-            <div className="text-right hidden xs:block">
-              <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter truncate max-w-[100px]">
-                {adminData.displayName}
-              </p>
-              <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
-                {adminData.role}
-              </p>
-            </div>
-            <img 
-              src={adminData.photoURL} 
-              className="w-9 h-9 md:w-10 md:h-10 rounded-xl shadow-sm object-cover border border-slate-100 transition-transform hover:scale-105" 
-              alt="Admin Profile" 
-              onError={(e) => { e.target.src = "https://i.pravatar.cc/150"; }}
-            />
+            {adminData ? (
+              // This renders only once data is fetched from Firebase
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="text-right hidden xs:block">
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter truncate max-w-[120px]">
+                    {adminData.displayName}
+                  </p>
+                  <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
+                    {adminData.role}
+                  </p>
+                </div>
+                <img 
+                  src={adminData.photoURL} 
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-xl shadow-sm object-cover border border-slate-100 transition-transform hover:scale-105" 
+                  alt="Admin Profile" 
+                  onError={(e) => { e.target.src = "https://i.pravatar.cc/150"; }}
+                />
+              </div>
+            ) : (
+              // Professional Skeleton Loader for the "Refresh" state
+              <div className="flex items-center gap-3 animate-pulse">
+                <div className="text-right hidden xs:flex flex-col gap-1 items-end">
+                  <div className="h-2 w-16 bg-slate-200 rounded" />
+                  <div className="h-2 w-10 bg-slate-100 rounded" />
+                </div>
+                <div className="w-9 h-9 md:w-10 md:h-10 bg-slate-200 rounded-xl" />
+              </div>
+            )}
           </div>
         </header>
 
         {/* DYNAMIC CONTENT SWITCHER */}
         <div className="p-4 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
-          {/* Content Wrapper ensures internal tables/grids don't break layout */}
           <div className="max-w-full">
             {activeTab === 'dashboard' && <DashboardOverview />}
             {activeTab === 'bookings' && <Booking />}

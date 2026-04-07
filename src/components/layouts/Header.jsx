@@ -288,58 +288,67 @@ const Navbar = () => {
 
               <div className="ml-4 pl-4 border-l border-gray-200 flex items-center gap-2 relative">
                 {user ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowProfileMenu(!showProfileMenu)}
-                      className="flex items-center gap-3 pl-3 pr-2 py-1.5 bg-slate-50 rounded-full border border-slate-100"
-                    >
-                      <div className="text-left hidden xl:block">
-                        <p className="text-[10px] font-black text-slate-800 leading-none uppercase">
-                          {user.displayName || "Explorer"}
-                        </p>
-                        <p
-                          className={`text-[8px] font-bold mt-0.5 uppercase tracking-tighter ${user.emailVerified ? "text-emerald-600" : "text-amber-500"}`}
-                        >
-                          {user.emailVerified ? "Verified" : "Pending"}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs overflow-hidden border-2 ${user.emailVerified ? "bg-emerald-600" : "bg-amber-400"}`}
-                      >
-                        {user.photoURL ? (
-                          <img src={user.photoURL} alt="profile" />
-                        ) : (
-                          <User size={16} />
-                        )}
-                      </div>
-                      <ChevronDown
-                        size={14}
-                        className={`text-slate-400 transition-transform ${showProfileMenu ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                    {showProfileMenu && (
-                      <div className="absolute right-0 mt-3 w-56 bg-white shadow-2xl rounded-2xl border p-2 z-[200]">
-                        <RouterLink
-                          to="/profile"
-                          className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl"
-                        >
-                          <User size={16} className="text-emerald-600" />
-                          <span className="text-[11px] font-bold text-slate-700 uppercase">
-                            My Profile
-                          </span>
-                        </RouterLink>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 text-red-500 rounded-xl"
-                        >
-                          <LogOut size={16} />
-                          <span className="text-[11px] font-bold uppercase">
-                            Log Out
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
+  /* The 'group' class on this container is the key */
+  <div className="relative group">
+    <button
+      className="flex items-center gap-3 pl-3 pr-2 py-1.5 bg-slate-50 rounded-full border border-slate-100 hover:border-emerald-200 transition-all cursor-pointer"
+    >
+      <div className="text-left hidden xl:block">
+        <p className="text-[10px] font-black text-slate-800 leading-none uppercase">
+          {user.displayName || "Explorer"}
+        </p>
+        <p
+          className={`text-[8px] font-bold mt-0.5 uppercase tracking-tighter ${
+            user.emailVerified ? "text-emerald-600" : "text-amber-500"
+          }`}
+        >
+          {user.emailVerified ? "Verified" : "Pending"}
+        </p>
+      </div>
+      <div
+        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs overflow-hidden border-2 ${
+          user.emailVerified ? "bg-emerald-600" : "bg-amber-400"
+        }`}
+      >
+        {user.photoURL ? (
+          <img src={user.photoURL} alt="profile" className="w-full h-full object-cover" />
+        ) : (
+          <User size={16} />
+        )}
+      </div>
+      <ChevronDown
+        size={14}
+        className="text-slate-400 transition-transform group-hover:rotate-180"
+      />
+    </button>
+
+    {/* Dropdown Menu: Shows on parent hover */}
+    <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[200]">
+      <div className="w-56 bg-white shadow-2xl rounded-2xl border border-gray-100 p-2 transform origin-top scale-95 group-hover:scale-100 transition-transform">
+        <RouterLink
+          to="/profile"
+          className="flex items-center gap-3 p-3 hover:bg-emerald-50 rounded-xl transition-colors group/item"
+        >
+          <User size={16} className="text-emerald-600" />
+          <span className="text-[11px] font-bold text-slate-700 uppercase">
+            My Profile
+          </span>
+        </RouterLink>
+        
+        <div className="h-[1px] bg-slate-50 my-1 mx-2"></div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 text-red-500 rounded-xl transition-colors"
+        >
+          <LogOut size={16} />
+          <span className="text-[11px] font-bold uppercase">
+            Log Out
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
                 ) : (
                   <>
                     <RouterLink
