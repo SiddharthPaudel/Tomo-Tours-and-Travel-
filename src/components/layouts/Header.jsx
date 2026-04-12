@@ -45,23 +45,47 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser && currentUser.emailVerified) {
-        try {
+useEffect(() => {
+  let interval;
+
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    setUser(currentUser);
+
+    // If a user exists but is NOT verified, start checking every 3 seconds
+    if (currentUser && !currentUser.emailVerified) {
+      interval = setInterval(async () => {
+        await currentUser.reload();
+        if (currentUser.emailVerified) {
+          setUser({ ...currentUser }); // Update local state
+          
+          // Sync with Firestore
           const userRef = doc(db, "users", currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists() && userSnap.data().emailVerified === false) {
-            await updateDoc(userRef, { emailVerified: true });
-          }
-        } catch (err) {
-          console.error("Sync error:", err);
+          await updateDoc(userRef, { emailVerified: true });
+          
+          clearInterval(interval); // Stop checking once verified
         }
+      }, 3000);
+    }
+
+    // Standard sync for already verified users
+    if (currentUser && currentUser.emailVerified) {
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && userSnap.data().emailVerified === false) {
+          await updateDoc(userRef, { emailVerified: true });
+        }
+      } catch (err) {
+        console.error("Sync error:", err);
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    }
+  });
+
+  return () => {
+    unsubscribe();
+    if (interval) clearInterval(interval); // Cleanup on unmount
+  };
+}, []);
 
   const checkVerificationStatus = async () => {
     if (auth.currentUser) {

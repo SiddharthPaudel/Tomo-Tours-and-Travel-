@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { auth, googleProvider, db } from "../../services/firebase"; 
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore"; 
-import AlertModal from '../../utils/AlertModal'; // Path to your new modal
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
+import AlertModal from '../../utils/AlertModal'; 
 import pic from "../../images/hero3.jpg";
 
 const LoginPage = () => {
@@ -15,7 +15,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 1. Added Modal State
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     type: 'success',
@@ -24,15 +23,21 @@ const LoginPage = () => {
     onConfirm: () => {},
   });
 
+  /**
+   * Syncs Firebase Auth state with Firestore "users" collection
+   * High importance for the Traveler Directory (UserManager)
+   */
   const getUserRoleAndSync = async (user) => {
     const userRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
+      // NEW USER (Usually via Google Popup for the first time)
       const newUser = {
         uid: user.uid,
         displayName: user.displayName || "New Explorer",
         email: user.email,
+        emailVerified: user.emailVerified, // Google is true by default
         photoURL: user.photoURL || "",
         createdAt: new Date(),
         role: "user" 
@@ -40,11 +45,18 @@ const LoginPage = () => {
       await setDoc(userRef, newUser);
       return "user";
     } else {
-      return docSnap.data().role || "user";
+      // EXISTING USER
+      const existingData = docSnap.data();
+      
+      // Update verification status in Firestore if it changed in Auth
+      if (user.emailVerified && !existingData.emailVerified) {
+        await updateDoc(userRef, { emailVerified: true });
+      }
+
+      return existingData.role || "user";
     }
   };
 
-  // 2. Optimized Login Logic with Modal
   const handleLoginSuccess = (role) => {
     setModalConfig({
       isOpen: true,
@@ -53,9 +65,9 @@ const LoginPage = () => {
       message: 'Welcome back! Redirecting you to your dashboard...',
       confirmText: 'Continue',
       onConfirm: () => {
-        setModalConfig({ ...modalConfig, isOpen: false });
+        setModalConfig((prev) => ({ ...prev, isOpen: false }));
         if (role === "admin") {
-          navigate("/admin/*");
+          navigate("/admin");
         } else {
           navigate("/");
         }
@@ -70,18 +82,17 @@ const LoginPage = () => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const role = await getUserRoleAndSync(result.user);
-      handleLoginSuccess(role); // Show success message
+      handleLoginSuccess(role); 
     } catch (err) {
       console.error(err);
-      // Keep your existing error text AND show the modal for better UI
-      setError("Invalid email or password. Please try again.");
+      setError("Invalid email or password.");
       setModalConfig({
         isOpen: true,
         type: 'error',
         title: 'Authentication Failed',
         message: 'The email or password you entered is incorrect.',
         confirmText: 'Try Again',
-        onConfirm: () => setModalConfig({ ...modalConfig, isOpen: false })
+        onConfirm: () => setModalConfig((prev) => ({ ...prev, isOpen: false }))
       });
     } finally {
       setLoading(false);
@@ -93,11 +104,12 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      // Google Auth automatically provides emailVerified: true
       const role = await getUserRoleAndSync(result.user);
-      handleLoginSuccess(role); // Show success message
+      handleLoginSuccess(role);
     } catch (err) {
       console.error("Google Login Error:", err);
-      setError("Google Sign-In failed. Please try again.");
+      setError("Google Sign-In failed.");
     } finally {
       setLoading(false);
     }
@@ -106,15 +118,14 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFB] flex items-start justify-center pt-[5vh] md:pt-[7vh] p-6 font-['Montserrat'] overflow-x-hidden">
       
-      {/* 3. Added the Modal Component here */}
       <AlertModal 
         {...modalConfig} 
-        onCancel={() => !loading && setModalConfig({ ...modalConfig, isOpen: false })} 
+        onCancel={() => !loading && setModalConfig((prev) => ({ ...prev, isOpen: false }))} 
       />
 
       <div className="max-w-5xl w-full bg-white rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.04)] flex flex-col md:flex-row border border-slate-100 overflow-hidden h-fit mb-10">
         
-        {/* LEFT SIDE (Hero Image) - NO CHANGES */}
+        {/* LEFT SIDE: DECORATIVE */}
         <div className="md:w-[42%] relative hidden md:block self-stretch min-h-[480px]">
           <img src={pic} alt="Mountains" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-slate-900/30" />
@@ -125,7 +136,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE (Form) - NO CHANGES */}
+        {/* RIGHT SIDE: FORM */}
         <div className="md:w-[58%] p-6 md:p-10 bg-white flex flex-col items-center">
           <div className="max-w-sm w-full relative">
             <header className="mb-6 text-center">
@@ -133,16 +144,18 @@ const LoginPage = () => {
               <p className="text-slate-400 text-[10px] font-bold mt-2 uppercase tracking-[0.2em]">The trails are waiting</p>
             </header>
 
-            {error && <p className="text-red-500 text-xs font-bold mb-4 text-center bg-red-50 p-2 rounded-lg">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-xs font-bold mb-4 text-center bg-red-50 p-2 rounded-lg animate-shake">
+                {error}
+              </p>
+            )}
 
-            {/* GOOGLE BUTTON */}
             <button 
               type="button"
               disabled={loading}
               onClick={handleGoogleLogin}
               className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all mb-5 shadow-sm active:scale-[0.98] disabled:opacity-50"
             >
-              {/* Google SVG Icon */}
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -158,7 +171,6 @@ const LoginPage = () => {
               <div className="flex-grow border-t border-slate-100"></div>
             </div>
 
-            {/* EMAIL FORM */}
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="group">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Email Address</label>
@@ -178,7 +190,13 @@ const LoginPage = () => {
               <div className="group">
                 <div className="flex justify-between items-center mb-1 px-1">
                   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
-                  <button type="button" className="text-[9px] font-bold text-emerald-600">Forgot Password?</button>
+                  <button 
+                    type="button" 
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-tighter"
+                  >
+                    Forgot Password?
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />

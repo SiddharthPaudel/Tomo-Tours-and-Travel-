@@ -28,6 +28,10 @@ import { onAuthStateChanged } from 'firebase/auth'
 import MyProfile from './components/MyProfile/MyProfile';
 import { Package } from 'lucide-react';
 import PackagePage from './components/Package/Package';
+import ForgotPassword from './components/ForgotPassword/ForgotPassword';
+import ResetPassword from './components/ResetPassword/ResetPassword';
+import EmailVerification from './components/EmailVerification/EmailVerification';
+import AuthHandler from './components/AuthHandler/AuthHandler';
 
 // --- Helper: Scroll to top ---
 const ScrollToTop = () => {
@@ -99,6 +103,10 @@ const App = () => {
           <Route path='/signup' element={<SignupPage />} />
           <Route path="/profile" element={<MyProfile />} />
           <Route path='/packagepage' element={<PackagePage />} />  
+          <Route path="/auth-handler" element={<AuthHandler />} />
+          <Route path='/forgot-password' element={<ForgotPassword/>}/>
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
 
           {/* Admin Routes - AdminMain handles its own sub-views (Dashboard, Users, etc.) */}
           <Route path="/admin/*" element={

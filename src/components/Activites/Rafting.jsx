@@ -313,17 +313,23 @@ const RaftingActivity = () => {
 
       {/* TRIP GRID USING PACKAGE CARD */}
       {/* TRIP GRID */}
+{/* TRIP GRID */}
+{/* TRIP GRID */}
 <section className="max-w-7xl mx-auto px-6 py-24">
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
     {allTrips.map((trip) => (
-      /* 1. Wrap in a div with onClick to match your Trekking logic */
       <div 
         key={trip.id} 
         onClick={() => setSelectedTrip(trip)} 
         className="cursor-pointer transition-transform duration-500 hover:-translate-y-2"
       >
-        {/* 2. Pass the data prop exactly like you do in Trekking */}
-        <PackageCard data={{ ...trip, category: 'Rafting' }} />
+        <PackageCard 
+          data={{ 
+            ...trip,                 // This keeps your price and duration
+            category: 'Rafting', 
+            highlights: []           // This hides only the highlights and prevents the crash
+          }} 
+        />
       </div>
     ))}
   </div>
