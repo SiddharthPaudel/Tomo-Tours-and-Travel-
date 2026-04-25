@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db, auth } from "../../services/firebase"; 
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -13,8 +13,14 @@ import AlertModal from '../../utils/AlertModal';
 import PackageCard from '../Cards/PackageCard'; 
 
 const InternationalActivity = () => {
-  const { id } = useParams(); // URL ID for deep linking
+  const { id } = useParams(); 
   const navigate = useNavigate(); 
+
+  // --- REFS FOR SECTION SCROLLING ---
+  const overviewRef = useRef(null);
+  const highlightsRef = useRef(null);
+  const costRef = useRef(null);
+  const timelineRef = useRef(null);
 
   const [allDestinations, setAllDestinations] = useState([]);
   const [selectedIntl, setSelectedIntl] = useState(null);
@@ -25,7 +31,6 @@ const InternationalActivity = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Alert Modal Config
   const [modalConfig, setModalConfig] = useState({ 
     isOpen: false, 
     type: 'success', 
@@ -41,33 +46,41 @@ const InternationalActivity = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Logic mirrored from TrekActivity
+  // Helper for smooth scrolling with offset
+  const scrollToSection = (ref) => {
+    if (ref.current) {
+      const offset = 100; 
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = ref.current.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    
-    // Query the "destinations" collection instead of "activities"
     const q = query(collection(db, "destinations"), where("type", "==", "international"));
     
     const unsubscribeData = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllDestinations(docs);
 
-      // Handle deep linking based on URL ID
       if (id) {
         const found = docs.find(d => d.id === id);
         if (found) {
           setSelectedIntl(found);
         } else {
           setSelectedIntl(null);
-          navigate('/activities/international'); 
+          navigate('/destinations/international'); 
         }
       } else {
         setSelectedIntl(null);
       }
-      
-      setLoading(false);
-    }, (error) => {
-      console.error("Firebase Error:", error);
       setLoading(false);
     });
 
@@ -89,7 +102,6 @@ const InternationalActivity = () => {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    
     const phoneRegex = /^9\d{9}$/;
 
     if (!bookingData.date || !bookingData.phone) {
@@ -113,7 +125,6 @@ const InternationalActivity = () => {
       }
 
     setIsSubmitting(true);
-
     try {
       await addDoc(collection(db, "bookings"), {
         userId: currentUser?.uid || 'guest',
@@ -131,7 +142,7 @@ const InternationalActivity = () => {
 
       setModalConfig({
         isOpen: true, type: 'success', title: 'Request Received',
-        message: `Your request for ${selectedIntl.name} has been sent. We will contact you soon.`,
+        message: `Your request for ${selectedIntl.name} has been sent.`,
         confirmText: 'Excellent',
         onConfirm: () => {
           setModalConfig(prev => ({ ...prev, isOpen: false }));
@@ -162,12 +173,11 @@ const InternationalActivity = () => {
     </div>
   );
 
-  // --- DETAIL VIEW ---
   if (selectedIntl) {
     const { name, overview, budget, image, details } = selectedIntl;
     
     return (
-      <div className="min-h-screen bg-white font-['Montserrat'] animate-in fade-in duration-700 pb-20">
+      <div className="min-h-screen bg-white font-montserrat animate-in fade-in duration-700 pb-20">
         <AlertModal {...modalConfig} onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })} />
         
         {/* HERO SECTION */}
@@ -175,13 +185,10 @@ const InternationalActivity = () => {
           <button onClick={handleBack} className="absolute top-10 left-10 z-30 bg-white/20 backdrop-blur-xl p-4 rounded-full text-white hover:bg-emerald-500 transition-all">
             <ChevronLeft size={24} />
           </button>
-          
           <div className="absolute inset-0">
              <img src={image} alt={name} className="w-full h-full object-cover opacity-60" />
           </div>
-          
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30" />
-          
           <div className="absolute bottom-16 left-10 md:left-24 z-10">
             <span className="bg-emerald-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest mb-4 inline-block shadow-lg">International Destination</span>
             <h1 className="text-4xl md:text-8xl font-black uppercase tracking-tighter text-white leading-[0.85]">{name}</h1>
@@ -189,15 +196,60 @@ const InternationalActivity = () => {
           <Globe size={500} className="absolute -bottom-24 -right-24 text-white/5 pointer-events-none" />
         </div>
 
+        {/* --- STICKY NAVIGATION BAR --- */}
+        {/* --- FIXED CAROUSEL NAVIGATION --- */}
+{/* --- PROFESSIONAL CAROUSEL NAVIGATION --- */}
+{/* --- PROFESSIONAL RESPONSIVE CAROUSEL --- */}
+{/* --- PROFESSIONAL RESPONSIVE CAROUSEL --- */}
+{/* --- EMERALD HOVER CAROUSEL --- */}
+{/* --- EMERALD TOUCH-HOVER CAROUSEL --- */}
+<div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4 md:py-6">
+  <div className="max-w-7xl mx-auto px-4 md:px-6">
+    
+    <div className="flex justify-center">
+      {/* Container for horizontal scrolling on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory bg-slate-100/80 p-1.5 md:p-2 rounded-full w-full md:w-max border border-slate-200/50">
+        
+        {[
+          { label: 'Overview', ref: overviewRef },
+          { label: 'Highlights', ref: highlightsRef },
+          { label: 'Pricing', ref: costRef },
+          { label: 'Timeline', ref: timelineRef }
+        ].map((item) => (
+          <button 
+            key={item.label}
+            onClick={() => scrollToSection(item.ref)}
+            className="group relative flex-shrink-0 px-5 py-2.5 md:px-8 md:py-3 rounded-full transition-all duration-200 active:scale-95 snap-center"
+          >
+            {/* THE EMERALD LAYER:
+                - group-hover:bg-emerald-600 handles desktop hover.
+                - active:bg-emerald-600 handles the immediate touch-start on mobile.
+            */}
+            <div className="absolute inset-0 bg-white group-hover:bg-emerald-600 active:bg-emerald-600 rounded-full transition-all duration-200 shadow-sm border border-slate-200 group-hover:border-emerald-600 active:border-emerald-600" />
+            
+            {/* THE TEXT LAYER:
+                - Changes to white on hover (desktop) or active (mobile touch).
+            */}
+            <span className="relative z-10 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-white active:text-white transition-colors duration-200 whitespace-nowrap">
+              {item.label}
+            </span>
+          </button>
+        ))}
+        
+      </div>
+    </div>
+  </div>
+</div>
+
         <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16">
-            <div className="lg:col-span-2 space-y-16">
-              <section>
+            <div className="lg:col-span-2 space-y-24">
+              <section ref={overviewRef}>
                 <h2 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-6">Overview</h2>
                 <p className="text-xl text-slate-600 font-medium leading-relaxed whitespace-pre-line">{overview}</p>
               </section>
 
               {details?.whyChoose && (
-                <section className="bg-emerald-950 p-12 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
+                <section ref={highlightsRef} className="bg-emerald-950 p-12 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
                    <div className="flex items-center gap-3 mb-10 relative z-10">
                      <Target size={18} className="text-emerald-400" />
                      <h2 className="text-[11px] font-black text-emerald-300 uppercase tracking-[0.4em]">Strategic Highlights</h2>
@@ -213,7 +265,7 @@ const InternationalActivity = () => {
                 </section>
               )}
 
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-12 py-16 border-y border-slate-100">
+              <section ref={costRef} className="grid grid-cols-1 md:grid-cols-2 gap-12 py-16 border-y border-slate-100">
                 <div>
                   <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
                     <Check size={18} className="p-1 bg-emerald-100 rounded-full"/> Cost Includes
@@ -241,7 +293,7 @@ const InternationalActivity = () => {
               </section>
 
               {details?.itinerary && (
-                <section>
+                <section ref={timelineRef}>
                   <h2 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-10">Expedition Timeline</h2>
                   <div className="relative ml-4 border-l-2 border-emerald-50">
                     {details.itinerary.split('\n').filter(d => d.trim()).map((day, idx) => (
@@ -328,7 +380,7 @@ const InternationalActivity = () => {
 
   // --- LIST VIEW ---
   return (
-    <div className="min-h-screen bg-white font-['Montserrat'] pb-32 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-white font-montserrat pb-32 animate-in fade-in duration-500">
       <header className="py-28 px-10 bg-emerald-950 text-white relative overflow-hidden">
         <Globe size={400} className="absolute -bottom-20 -right-20 text-white/5" />
         <div className="relative z-10 max-w-4xl">
@@ -349,7 +401,7 @@ const InternationalActivity = () => {
                 data={{
                   ...dest, 
                   category: dest.details?.region || 'International',
-                  price: dest.budget // Standardizing for the card component
+                  price: dest.budget
                 }} 
               />
             </div>
